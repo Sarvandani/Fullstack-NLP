@@ -130,7 +130,12 @@ git push -u origin main
    - Choose repository: `nlp-fullstack-app`
    - Click **"Connect"**
 
-4. **Configure Settings:**
+4. **Choose Language/Runtime:**
+   - **Select "Python"** ✅ (NOT Docker)
+   - Docker is for containerized apps - we're using Python with requirements.txt
+   - Render will detect Python automatically from your files
+
+5. **Configure Settings:**
    ```
    Name: nlp-backend
    Region: Choose closest to you
@@ -145,7 +150,7 @@ git push -u origin main
    - The `runtime.txt` file should auto-detect, but if build fails, set it manually
    - Go to: Settings → Environment → Python Version → Select **3.11.9**
 
-5. **Build & Deploy Settings:**
+6. **Build & Deploy Settings:**
    ```
    Build Command:
    pip install -r backend/requirements.txt && python -m spacy download en_core_web_sm
@@ -154,13 +159,13 @@ git push -u origin main
    cd backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT
    ```
 
-6. **Click "Create Web Service"**
+7. **Click "Create Web Service"**
 
-7. **Wait for deployment** (5-10 minutes first time)
+8. **Wait for deployment** (5-10 minutes first time)
    - Watch the logs
    - Wait for "Your service is live" message
 
-8. **Copy your backend URL:**
+9. **Copy your backend URL:**
    - Example: `https://nlp-backend.onrender.com`
    - **Save this URL!** You'll need it next.
 
