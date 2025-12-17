@@ -29,69 +29,21 @@
         }
 
         .header {
-            background: #0a0e27;
+            background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
             color: white;
-            padding: 35px 40px;
+            padding: 30px;
+            text-align: center;
             border-bottom: 2px solid #2196F3;
         }
 
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-bottom: 20px;
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
         }
 
-        .header-name {
-            font-size: 2.2em;
-            font-weight: bold;
-            color: #64b5f6;
-            margin: 0;
-        }
-
-        .header-title {
-            font-size: 0.95em;
-            color: #90caf9;
-            text-align: right;
-        }
-
-        .header-info {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 25px;
-            align-items: center;
-            font-size: 0.9em;
-            color: #b0bec5;
-            border-top: 1px solid #1a237e;
-            padding-top: 20px;
-        }
-
-        .header-info-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .header-info-item a {
-            color: #64b5f6;
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .header-info-item a:hover {
-            color: #90caf9;
-            text-decoration: underline;
-        }
-
-        .header-subtitle {
+        .header p {
             font-size: 1.1em;
-            color: #90caf9;
-            margin-top: 15px;
-            text-align: center;
-            padding-top: 15px;
-            border-top: 1px solid #1a237e;
+            opacity: 0.9;
         }
 
         .main-content {
@@ -322,68 +274,13 @@
             color: #90caf9;
             margin-top: 5px;
         }
-
-        @media (max-width: 768px) {
-            .header {
-                padding: 25px 20px;
-            }
-
-            .header-top {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-
-            .header-name {
-                font-size: 1.8em;
-            }
-
-            .header-title {
-                text-align: left;
-                font-size: 0.85em;
-            }
-
-            .header-info {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
-                font-size: 0.85em;
-            }
-
-            .header-subtitle {
-                font-size: 0.95em;
-                text-align: left;
-            }
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div class="header-top">
-                <h1 class="header-name">SARVANDANI</h1>
-                <div class="header-title">Titre Talent Salarié jusqu'en 2028</div>
-            </div>
-            <div class="header-info">
-                <div class="header-info-item">
-                    📍 Palaiseau, Île-de-France
-                </div>
-                <div class="header-info-item">
-                    📱 +33 6 23 26 98 63
-                </div>
-                <div class="header-info-item">
-                    📧 <a href="mailto:mohamadian.sarvandani@gmail.com">mohamadian.sarvandani@gmail.com</a>
-                </div>
-                <div class="header-info-item">
-                    🔗 <a href="https://www.linkedin.com/in/sarvandani" target="_blank">LinkedIn</a>
-                </div>
-                <div class="header-info-item">
-                    💻 <a href="https://github.com/Sarvandani" target="_blank">GitHub</a>
-                </div>
-            </div>
-            <div class="header-subtitle">
-                Text and PDF analysis • Sentiment Analysis • Named Entity Recognition • Text Classification • Summarization
-            </div>
+            <h1>SARVANDANI - Text and PDF analysis</h1>
+            <p>Sentiment Analysis • Named Entity Recognition • Text Classification • Summarization</p>
         </div>
 
         <div class="main-content">
