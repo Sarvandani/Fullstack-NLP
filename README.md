@@ -1,6 +1,6 @@
 # 📊 SARVANDANI - Text and PDF analysis
 
-A comprehensive full-stack application for Natural Language Processing tasks including Sentiment Analysis, Named Entity Recognition, Text Classification, and Summarization.
+A full-stack application for simple Natural Language Processing tasks including Sentiment Analysis, Named Entity Recognition, Text Classification, and Summarization.
 
 ## 🌐 Live Application
 
