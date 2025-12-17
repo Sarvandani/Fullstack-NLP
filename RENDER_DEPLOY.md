@@ -137,8 +137,13 @@ git push -u origin main
    Branch: main
    Root Directory: (leave empty)
    Environment: Python 3
+   Python Version: 3.11.9 (CRITICAL - must be 3.11, not 3.13!)
    Plan: Free
    ```
+   
+   **⚠️ CRITICAL:** In Render settings, manually set Python Version to **3.11.9**
+   - The `runtime.txt` file should auto-detect, but if build fails, set it manually
+   - Go to: Settings → Environment → Python Version → Select **3.11.9**
 
 5. **Build & Deploy Settings:**
    ```
