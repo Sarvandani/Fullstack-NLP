@@ -327,13 +327,11 @@
 
     <script>
         // Auto-detect API URL based on environment
-        // For production: Update this to your Render backend URL
-        // Example: 'https://nlp-backend.onrender.com'
         const isLocalhost = window.location.hostname === 'localhost' || 
                             window.location.hostname === '127.0.0.1';
         let API_URL = isLocalhost 
             ? 'http://localhost:5000'  // Local development
-            : 'https://your-backend-url.onrender.com';  // UPDATE THIS with your Render backend URL
+            : 'https://fullstack-nlp.onrender.com';  // Production backend on Render
         let backendDetected = false;
         
         // Try common ports with better error handling (check 5001 first since 5000 might be taken)
