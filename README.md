@@ -1,6 +1,10 @@
-# 📊 NLP Full-Stack Application
+# 📊 SARVANDANI - Text and PDF analysis
 
 A comprehensive full-stack application for Natural Language Processing tasks including Sentiment Analysis, Named Entity Recognition, Text Classification, and Summarization.
+
+## 🌐 Live Application
+
+**🔗 [Try it now: https://fullstack-nlp-sarvandani.onrender.com/](https://fullstack-nlp-sarvandani.onrender.com/)**
 
 ## 🚀 Tech Stack
 
@@ -106,12 +110,11 @@ NLP_FULL-STACK_project/
 
 ## 🌐 Deployment
 
-See `DEPLOYMENT.md` and `QUICK_DEPLOY.md` for detailed deployment instructions to free hosting services like Render, Railway, etc.
-
 **Key Points:**
 - Don't upload the `models/` folder (too large, ~2-3GB)
 - Models download automatically on first request
 - Update frontend API URL to your backend URL
+- Deployed on Render.com (free tier)
 
 ## 📝 API Endpoints
 
@@ -138,6 +141,14 @@ See `DEPLOYMENT.md` and `QUICK_DEPLOY.md` for detailed deployment instructions t
 
 MIT License
 
+## ⚠️ Disclaimer
+
+This application is provided "as is" without any warranties or guarantees. The NLP models used are pre-trained and may not always produce 100% accurate results. Results are for informational purposes only and should not be used as the sole basis for important decisions. The author is not responsible for any consequences arising from the use of this application.
+
 ## 👨‍💻 Author
 
-NLP Full-Stack Application
+**SARVANDANI**
+
+---
+
+*For questions, issues, or contributions, please open an issue on GitHub.*
