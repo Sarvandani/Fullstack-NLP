@@ -1,0 +1,12 @@
+models/
+*.log
+__pycache__/
+*.pyc
+.git/
+.gitignore
+*.md
+deploy.sh
+backend.log
+frontend.log
+.DS_Store
+
