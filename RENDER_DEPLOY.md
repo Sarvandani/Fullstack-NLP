@@ -150,7 +150,14 @@ git push -u origin main
    - The `runtime.txt` file should auto-detect, but if build fails, set it manually
    - Go to: Settings → Environment → Python Version → Select **3.11.9**
 
-6. **Build & Deploy Settings:**
+6. **Environment Variables (SKIP THIS - Not Needed):**
+   - You'll see a section for "Environment Variables"
+   - **You can skip this** - no environment variables needed for this app
+   - Render automatically sets `PORT` for you
+   - Models download automatically (no API keys needed)
+   - **Just leave it empty and continue**
+
+7. **Build & Deploy Settings:**
    ```
    Build Command:
    pip install -r backend/requirements.txt && python -m spacy download en_core_web_sm
