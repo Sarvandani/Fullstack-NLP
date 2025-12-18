@@ -254,22 +254,25 @@ class NLPService:
         
         # Pre-filter: Detect simple greetings and casual conversation
         text_lower = text.lower().strip()
-        greeting_patterns = [
-            r'\b(hi|hello|hey|greetings|good morning|good afternoon|good evening)\b',
-            r'\b(glad|happy|pleased|nice)\s+(to|that)\s+(see|meet|hear)',
-            r'\b(how are you|how do you do|what\'?s up)\b',
-            r'^(thanks?|thank you|thx)',
-            r'^(bye|goodbye|see you|farewell)'
-        ]
+        text_words = text_lower.split()
         
+        # Common greeting words and phrases
+        greeting_words = ['hi', 'hello', 'hey', 'greetings', 'good morning', 'good afternoon', 'good evening', 
+                         'thanks', 'thank you', 'thx', 'bye', 'goodbye', 'see you', 'farewell']
+        greeting_phrases = ['glad to see', 'happy to see', 'pleased to see', 'nice to see', 'glad to meet', 
+                           'happy to meet', 'nice to meet', 'how are you', 'how do you do', "what's up"]
+        
+        # Check if text starts with or contains greeting words
         is_greeting = False
-        for pattern in greeting_patterns:
-            if re.search(pattern, text_lower):
-                is_greeting = True
-                break
+        if any(text_lower.startswith(word) for word in greeting_words):
+            is_greeting = True
+        elif any(phrase in text_lower for phrase in greeting_phrases):
+            is_greeting = True
+        elif any(word in text_words[:3] for word in greeting_words):  # Greeting in first 3 words
+            is_greeting = True
         
-        # If it's a short greeting/casual text, classify it directly
-        if is_greeting or (len(text.split()) <= 10 and len(text) < 100):
+        # If it's a short greeting/casual text (less than 15 words), classify it directly
+        if is_greeting or (len(text_words) <= 15 and len(text) < 150):
             sentiment_result = self.analyze_sentiment(text)
             return {
                 "category": "casual conversation and greetings",
