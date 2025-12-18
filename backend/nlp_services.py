@@ -1,5 +1,6 @@
 import os
 import re
+import threading
 from typing import Dict, List, Any
 import torch
 from transformers import (
@@ -24,6 +25,7 @@ class NLPService:
         self.classification_pipeline = None
         self.summarizer_pipeline = None
         self.models_loaded = False
+        self._loading_lock = threading.Lock()  # Thread safety for model loading
         
         print("NLP Service initialized (models will load on first request)")
     
@@ -88,16 +90,23 @@ class NLPService:
             try:
                 print(f"Loading zero-shot classification model: {model_info['name']}")
                 print(f"  ({model_info['description']})")
+                # Use a simpler approach to avoid threading issues
+                # Load model with explicit settings to prevent conflicts
                 self.classification_pipeline = pipeline(
                     "zero-shot-classification",
                     model=model_info["name"],
                     cache_dir=self.models_dir,
-                    device=-1  # CPU
+                    device=-1,  # CPU
+                    model_kwargs={"torch_dtype": torch.float32}  # Explicit dtype
                 )
                 print(f"✅ Classification model loaded successfully: {model_info['name']}")
                 return  # Success, exit function
             except Exception as e:
-                print(f"⚠️  Error loading {model_info['name']}: {e}")
+                print(f"⚠️  Error loading {model_info['name']}: {str(e)}")
+                # Don't print full traceback for expected failures (model not found, etc.)
+                if "not found" not in str(e).lower() and "connection" not in str(e).lower():
+                    import traceback
+                    traceback.print_exc()
                 continue  # Try next model
         
         # If all models failed
@@ -129,21 +138,39 @@ class NLPService:
             raise
     
     def _ensure_models_loaded(self):
-        """Load models if not already loaded"""
+        """Load models if not already loaded (thread-safe)"""
         if self.models_loaded:
             return
         
-        print("Loading NLP models (first request - this may take a minute)...")
-        try:
-            self._load_sentiment_model()
-            self._load_ner_model()
-            self._load_classification_model()
-            self._load_summarization_model()
-            self.models_loaded = True
-            print("✅ All models loaded successfully!")
-        except Exception as e:
-            print(f"❌ Error loading models: {e}")
-            raise
+        # Use lock to prevent multiple threads from loading models simultaneously
+        with self._loading_lock:
+            # Double-check after acquiring lock
+            if self.models_loaded:
+                return
+            
+            print("Loading NLP models (first request - this may take a minute)...")
+            try:
+                # Load models sequentially to avoid conflicts
+                print("  [1/4] Loading sentiment model...")
+                self._load_sentiment_model()
+                
+                print("  [2/4] Loading NER model...")
+                self._load_ner_model()
+                
+                print("  [3/4] Loading classification model...")
+                self._load_classification_model()
+                
+                print("  [4/4] Loading summarization model...")
+                self._load_summarization_model()
+                
+                self.models_loaded = True
+                print("✅ All models loaded successfully!")
+            except Exception as e:
+                print(f"❌ Error loading models: {e}")
+                import traceback
+                traceback.print_exc()
+                # Don't raise - allow partial loading
+                # Some models might still work even if others fail
     
     def analyze_sentiment(self, text: str) -> Dict[str, Any]:
         """Analyze sentiment of the text"""
