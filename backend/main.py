@@ -1,8 +1,10 @@
+# Set environment variables FIRST before any imports
+# This prevents threading conflicts and mutex lock errors
 import os
-# Set environment variables FIRST to prevent threading conflicts
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,6 +18,7 @@ import tempfile
 # Add current directory to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# Import NLPService after environment variables are set
 from nlp_services import NLPService
 
 app = FastAPI(title="NLP Full-Stack API")
