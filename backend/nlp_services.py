@@ -324,16 +324,21 @@ class NLPService:
                     
                     for label, score in zip(result["labels"], result["scores"]):
                         category_scores[label] = round(score, 4)
-                        # Improved threshold: 
-                        # - Top category: always include if > 0.15
-                        # - Other categories: include if > 25% of top score AND > 0.12
-                        # This ensures we get meaningful categories without too many false positives
+                        # Improved threshold with better logic:
+                        # - Top category: must be > 0.2 (higher bar for primary)
+                        # - Other categories: must be > 30% of top score AND > 0.15
+                        # - Special handling for general categories (they need higher confidence)
                         if len(relevant_categories) == 0:
-                            # First category (top score) - use absolute threshold
-                            threshold = 0.15
+                            # First category (top score) - higher threshold for accuracy
+                            threshold = 0.2
                         else:
-                            # Subsequent categories - use relative threshold
-                            threshold = max(0.12, max_score * 0.25)
+                            # Subsequent categories - relative to top score
+                            threshold = max(0.15, max_score * 0.3)
+                        
+                        # Special case: if it's a general category, require even higher confidence
+                        general_keywords = ["general", "casual", "everyday", "personal communication"]
+                        if any(keyword in label.lower() for keyword in general_keywords):
+                            threshold = max(threshold, 0.25)
                         
                         if score > threshold:
                             relevant_categories.append({
