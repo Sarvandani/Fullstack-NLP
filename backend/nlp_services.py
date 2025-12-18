@@ -98,27 +98,27 @@ class NLPService:
     
     def _load_classification_model(self):
         """Load high-performance zero-shot classification model"""
-        # Try multiple models in order: lightweight first, then better accuracy
+        # Try multiple models in order: best accuracy first, then fallback to faster ones
         # All are free and open-source
         models_to_try = [
             {
-                "name": "typeform/distilbert-base-uncased-mnli",
-                "description": "DistilBERT (fastest, lightweight ~250MB, good accuracy)",
+                "name": "MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli",
+                "description": "DeBERTa-v3 (BEST accuracy ~500MB, trained on MNLI+FEVER+ANLI)",
                 "priority": 1
             },
             {
                 "name": "facebook/bart-large-mnli",
-                "description": "BART-large (better accuracy ~1.6GB, slower)",
+                "description": "BART-large (very good accuracy ~1.6GB, slower)",
                 "priority": 2
             },
             {
-                "name": "MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli",
-                "description": "DeBERTa-v3 (best accuracy ~500MB, medium speed)",
+                "name": "typeform/distilbert-base-uncased-mnli",
+                "description": "DistilBERT (fastest, lightweight ~250MB, good accuracy)",
                 "priority": 3
             }
         ]
         
-        # Sort by priority (try lightweight first for faster startup)
+        # Sort by priority (try best accuracy first)
         models_to_try.sort(key=lambda x: x["priority"])
         
         for model_info in models_to_try:
@@ -311,8 +311,8 @@ class NLPService:
                         hypothesis_template="This text is about {}."  # Better template for classification
                     )
                     
-                    # Get all categories with confidence > 0.1 (reasonable threshold)
-                    # Only include categories that are meaningfully relevant
+                    # Get all categories with improved threshold logic
+                    # Use adaptive thresholding for better accuracy
                     relevant_categories = []
                     category_scores = {}
                     
@@ -321,8 +321,17 @@ class NLPService:
                     
                     for label, score in zip(result["labels"], result["scores"]):
                         category_scores[label] = round(score, 4)
-                        # Use relative threshold: at least 30% of the top score, or absolute 0.1
-                        threshold = max(0.1, max_score * 0.3)
+                        # Improved threshold: 
+                        # - Top category: always include if > 0.15
+                        # - Other categories: include if > 25% of top score AND > 0.12
+                        # This ensures we get meaningful categories without too many false positives
+                        if len(relevant_categories) == 0:
+                            # First category (top score) - use absolute threshold
+                            threshold = 0.15
+                        else:
+                            # Subsequent categories - use relative threshold
+                            threshold = max(0.12, max_score * 0.25)
+                        
                         if score > threshold:
                             relevant_categories.append({
                                 "category": label,
