@@ -102,18 +102,18 @@ class NLPService:
         # All are free and open-source
         models_to_try = [
             {
+                "name": "typeform/distilbert-base-uncased-mnli",
+                "description": "DistilBERT (FASTEST, lightweight ~250MB, good accuracy)",
+                "priority": 1
+            },
+            {
                 "name": "MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli",
                 "description": "DeBERTa-v3 (BEST accuracy ~500MB, trained on MNLI+FEVER+ANLI)",
-                "priority": 1
+                "priority": 2
             },
             {
                 "name": "facebook/bart-large-mnli",
                 "description": "BART-large (very good accuracy ~1.6GB, slower)",
-                "priority": 2
-            },
-            {
-                "name": "typeform/distilbert-base-uncased-mnli",
-                "description": "DistilBERT (fastest, lightweight ~250MB, good accuracy)",
                 "priority": 3
             }
         ]
