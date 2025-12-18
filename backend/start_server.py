@@ -9,6 +9,11 @@ import os
 import socket
 import uvicorn
 
+# Set environment variables to prevent threading conflicts
+os.environ["TOKENIZERS_PARALLELISM"] = "false"  # Disable tokenizer parallelism
+os.environ["OMP_NUM_THREADS"] = "1"  # Limit OpenMP threads
+os.environ["MKL_NUM_THREADS"] = "1"  # Limit MKL threads
+
 # Add current directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
