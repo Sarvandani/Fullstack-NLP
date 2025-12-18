@@ -60,24 +60,35 @@ class NLPService:
             raise
     
     def _load_classification_model(self):
-        """Load zero-shot classification model for better accuracy"""
-        # Using a lightweight zero-shot classification model
-        # This can classify text into any categories without fine-tuning
-        model_name = "facebook/bart-large-mnli"
+        """Load high-performance zero-shot classification model"""
+        # Using DeBERTa-v3-base-mnli - much better accuracy than DistilBERT
+        # Trained on multiple NLI datasets (MNLI, FEVER, ANLI) for superior zero-shot performance
+        # Free and open-source model with excellent classification accuracy
         try:
-            # Use a smaller, faster model for zero-shot classification
-            # BART-large-mnli is good but heavy, let's use a smaller alternative
-            # Actually, let's use a more lightweight zero-shot model
+            print("Loading high-performance zero-shot classification model (DeBERTa-v3)...")
             self.classification_pipeline = pipeline(
                 "zero-shot-classification",
-                model="typeform/distilbert-base-uncased-mnli",
+                model="MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli",
                 cache_dir=self.models_dir,
                 device=-1  # CPU
             )
+            print("✅ High-performance classification model loaded successfully!")
         except Exception as e:
-            print(f"Error loading zero-shot classification model, falling back to keyword-based: {e}")
-            # Fallback: will use keyword-based approach
-            self.classification_pipeline = None
+            print(f"⚠️ Error loading DeBERTa-v3 model: {e}")
+            print("Falling back to DistilBERT model...")
+            try:
+                # Fallback to DistilBERT if DeBERTa fails
+                self.classification_pipeline = pipeline(
+                    "zero-shot-classification",
+                    model="typeform/distilbert-base-uncased-mnli",
+                    cache_dir=self.models_dir,
+                    device=-1  # CPU
+                )
+                print("✅ Fallback model (DistilBERT) loaded successfully")
+            except Exception as e2:
+                print(f"❌ Error loading fallback model: {e2}")
+                print("Will use keyword-based classification")
+                self.classification_pipeline = None
     
     def _load_summarization_model(self):
         """Load DistilBART for summarization"""
@@ -228,25 +239,33 @@ class NLPService:
                 "general discussion"
             ]
             
-            # Truncate text if too long (zero-shot models have token limits)
-            # Use more text for better classification
-            max_chars = 1500
+            # Use more text for better classification (DeBERTa can handle longer texts)
+            # Truncate if too long, but keep more context for better accuracy
+            max_chars = 2000  # Increased from 1500 for better context
             if len(text) > max_chars:
+                # Keep the beginning (most important) and truncate at word boundary
                 text = text[:max_chars].rsplit(' ', 1)[0] + "..."
             
             # Use zero-shot classification with multi-label to detect multiple topics
             if self.classification_pipeline:
                 try:
                     # Enable multi-label to detect multiple relevant categories
-                    result = self.classification_pipeline(text, candidate_labels, multi_label=True)
+                    # DeBERTa-v3 is much better at understanding context and relationships
+                    result = self.classification_pipeline(
+                        text, 
+                        candidate_labels, 
+                        multi_label=True,
+                        hypothesis_template="This text is about {}."  # Better template for classification
+                    )
                     
-                    # Get all categories with confidence > 0.1 (threshold for relevance)
+                    # Get all categories with confidence > 0.08 (lower threshold for better detection)
+                    # DeBERTa-v3 is more accurate, so we can use a lower threshold
                     relevant_categories = []
                     category_scores = {}
                     
                     for label, score in zip(result["labels"], result["scores"]):
                         category_scores[label] = round(score, 4)
-                        if score > 0.1:  # Only include categories with meaningful confidence
+                        if score > 0.08:  # Lower threshold for better multi-label detection
                             relevant_categories.append({
                                 "category": label,
                                 "confidence": round(score, 4)
@@ -255,8 +274,8 @@ class NLPService:
                     # Sort by confidence
                     relevant_categories.sort(key=lambda x: x["confidence"], reverse=True)
                     
-                    # Get top 3 categories
-                    top_categories = relevant_categories[:3] if len(relevant_categories) >= 3 else relevant_categories
+                    # Get top 3-5 categories (more for better coverage)
+                    top_categories = relevant_categories[:5] if len(relevant_categories) >= 5 else relevant_categories
                     
                     # Primary category is the top one
                     primary_category = top_categories[0]["category"] if top_categories else "general discussion"
@@ -268,13 +287,15 @@ class NLPService:
                     return {
                         "category": primary_category,
                         "confidence": primary_confidence,
-                        "top_categories": top_categories,  # Top 3 categories
+                        "top_categories": top_categories,  # Top 3-5 categories
                         "all_category_scores": category_scores,  # All scores for reference
                         "sentiment": sentiment_result.get("sentiment", "neutral"),
-                        "multi_label": True  # Indicates multiple topics detected
+                        "multi_label": len(top_categories) > 1  # Indicates multiple topics detected
                     }
                 except Exception as e:
-                    print(f"Zero-shot classification failed, using fallback: {e}")
+                    print(f"Zero-shot classification failed: {e}")
+                    import traceback
+                    traceback.print_exc()
                     # Fall through to improved keyword-based approach
             
             # Enhanced fallback: Comprehensive keyword-based classification

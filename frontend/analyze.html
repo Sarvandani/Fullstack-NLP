@@ -659,17 +659,22 @@
             if (data.classification && !data.classification.error) {
                 let categoriesHtml = '';
                 
-                // Show top categories if available
+                // Show top categories if available (now supports up to 5)
                 if (data.classification.top_categories && data.classification.top_categories.length > 0) {
                     categoriesHtml = '<div style="margin-top: 15px;"><strong style="color: #64b5f6;">Detected Topics:</strong><div style="margin-top: 10px;">';
                     data.classification.top_categories.forEach((cat, index) => {
                         const confidencePercent = (cat.confidence * 100).toFixed(1);
                         const isPrimary = index === 0;
+                        const isSecondary = index === 1;
+                        // Use different styling for top 3, then lighter for 4-5
+                        const bgColor = isPrimary ? '#0d47a1' : isSecondary ? '#1565c0' : '#1a237e';
                         categoriesHtml += `
-                            <div style="background: ${isPrimary ? '#0d47a1' : '#1a237e'}; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #2196F3;">
+                            <div style="background: ${bgColor}; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #2196F3;">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <div>
-                                        <span style="color: #90caf9; font-weight: ${isPrimary ? 'bold' : 'normal'};">${isPrimary ? '🏆 ' : '• '}${cat.category}</span>
+                                        <span style="color: #90caf9; font-weight: ${isPrimary ? 'bold' : 'normal'};">
+                                            ${isPrimary ? '🏆 ' : isSecondary ? '🥈 ' : '• '}${cat.category}
+                                        </span>
                                     </div>
                                     <div style="color: #64b5f6; font-weight: bold;">${confidencePercent}%</div>
                                 </div>
