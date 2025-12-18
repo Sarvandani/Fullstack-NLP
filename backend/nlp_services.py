@@ -216,39 +216,40 @@ class NLPService:
         self._ensure_models_loaded()
         
         try:
-            # Comprehensive set of categories for automatic recognition
+            # Comprehensive set of categories - reordered to avoid bias
+            # Put more specific categories first, general ones last
             candidate_labels = [
-                "technology and computing",
-                "artificial intelligence and machine learning",
-                "software development and programming",
-                "business and finance",
-                "economics and markets",
-                "startups and entrepreneurship",
-                "science and research",
-                "medicine and healthcare",
-                "mental health and wellness",
-                "education and learning",
-                "politics and government",
-                "law and legal",
-                "news and current events",
                 "sports and athletics",
-                "entertainment and media",
+                "food and cooking",
+                "travel and tourism",
                 "music and arts",
                 "movies and television",
                 "literature and books",
-                "travel and tourism",
-                "food and cooking",
                 "fashion and style",
+                "gaming and esports",
+                "medicine and healthcare",
+                "mental health and wellness",
+                "education and learning",
+                "science and research",
+                "politics and government",
+                "law and legal",
+                "business and finance",
+                "economics and markets",
+                "personal finance and investing",
+                "career and employment",
+                "entertainment and media",
+                "news and current events",
+                "relationships and social",
+                "philosophy and religion",
+                "history and culture",
                 "environment and climate",
                 "energy and sustainability",
                 "automotive and transportation",
                 "real estate and property",
-                "personal finance and investing",
-                "career and employment",
-                "relationships and social",
-                "philosophy and religion",
-                "history and culture",
-                "gaming and esports",
+                "startups and entrepreneurship",
+                "artificial intelligence and machine learning",
+                "software development and programming",
+                "technology and computing",
                 "social media and internet culture",
                 "science fiction and fantasy",
                 "general discussion"
@@ -273,14 +274,19 @@ class NLPService:
                         hypothesis_template="This text is about {}."  # Better template for classification
                     )
                     
-                    # Get all categories with confidence > 0.08 (lower threshold for better detection)
-                    # DeBERTa-v3 is more accurate, so we can use a lower threshold
+                    # Get all categories with confidence > 0.1 (reasonable threshold)
+                    # Only include categories that are meaningfully relevant
                     relevant_categories = []
                     category_scores = {}
                     
+                    # Find the maximum score to normalize thresholds
+                    max_score = max(result["scores"]) if result["scores"] else 0.0
+                    
                     for label, score in zip(result["labels"], result["scores"]):
                         category_scores[label] = round(score, 4)
-                        if score > 0.08:  # Lower threshold for better multi-label detection
+                        # Use relative threshold: at least 30% of the top score, or absolute 0.1
+                        threshold = max(0.1, max_score * 0.3)
+                        if score > threshold:
                             relevant_categories.append({
                                 "category": label,
                                 "confidence": round(score, 4)
@@ -314,8 +320,9 @@ class NLPService:
                     # Fall through to improved keyword-based approach
             
             # Enhanced fallback: Comprehensive keyword-based classification
+            # Removed overly common words that appear in many contexts
             categories = {
-                "technology and computing": ["computer", "software", "tech", "digital", "internet", "code", "programming", "app", "device", "system", "network", "algorithm", "data", "server", "cloud", "hardware", "software", "platform", "application", "database", "cybersecurity"],
+                "technology and computing": ["computer", "software", "tech", "digital", "internet", "code", "programming", "app", "device", "server", "cloud", "hardware", "platform", "application", "database", "cybersecurity", "computing", "technology"],
                 "artificial intelligence and machine learning": ["ai", "artificial intelligence", "machine learning", "deep learning", "neural network", "algorithm", "model", "training", "dataset", "nlp", "natural language", "computer vision", "robotics", "automation"],
                 "software development and programming": ["code", "programming", "developer", "coding", "software", "application", "api", "framework", "library", "debug", "git", "repository", "deployment", "backend", "frontend"],
                 "business and finance": ["company", "business", "market", "sales", "revenue", "profit", "corporate", "enterprise", "finance", "investment", "stock", "trade", "commerce", "customer", "client", "revenue", "growth", "strategy"],
@@ -354,23 +361,38 @@ class NLPService:
             scores = {}
             
             # Improved scoring: count keyword matches and use word boundaries
+            # Only count if there are meaningful matches (at least 2 different keywords)
             import re
             for category, keywords in categories.items():
                 score = 0
+                matched_keywords = set()
                 for keyword in keywords:
                     # Use word boundaries for better matching
                     pattern = r'\b' + re.escape(keyword) + r'\b'
                     matches = len(re.findall(pattern, text_lower))
+                    if matches > 0:
+                        matched_keywords.add(keyword)
                     score += matches
+                
+                # Require at least 2 different keywords to be considered (reduces false positives)
+                if len(matched_keywords) < 2:
+                    score = score * 0.3  # Penalize single keyword matches
+                
                 scores[category] = score
             
-            # Get top 3 categories
+            # Get top 3 categories, but only if they have meaningful scores
             sorted_categories = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-            top_3 = sorted_categories[:3]
+            # Filter out categories with very low scores
+            meaningful_categories = [(cat, score) for cat, score in sorted_categories if score > 0.5]
+            top_3 = meaningful_categories[:3] if meaningful_categories else sorted_categories[:3]
             
-            # Primary category
-            top_category = top_3[0][0] if top_3 and top_3[0][1] > 0 else "general discussion"
-            max_score = top_3[0][1] if top_3 else 0
+            # Primary category - only if there's a meaningful match
+            if top_3 and top_3[0][1] > 0:
+                top_category = top_3[0][0]
+                max_score = top_3[0][1]
+            else:
+                top_category = "general discussion"
+                max_score = 0
             
             # Calculate confidence based on score ratio
             total_score = sum(scores.values())
