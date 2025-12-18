@@ -360,16 +360,17 @@
             : 'https://fullstack-nlp.onrender.com';  // Production backend on Render
         let backendDetected = false;
         
-        // Try common ports with better error handling
+        // Try common ports with better error handling - prioritize port 5000
         async function detectBackendPort() {
-            const ports = [5001, 5000, 5002, 5003, 5004, 5005];
+            const ports = [5000, 5001, 5002, 5003, 5004, 5005];
             
             for (const port of ports) {
                 try {
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 2000);
                     
-                    const response = await fetch(`http://localhost:${port}/health`, {
+                    // First check root endpoint to verify it's the NLP API
+                    const rootResponse = await fetch(`http://localhost:${port}/`, {
                         method: 'GET',
                         mode: 'cors',
                         signal: controller.signal,
@@ -381,13 +382,30 @@
                     
                     clearTimeout(timeoutId);
                     
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.status === 'healthy') {
-                            API_URL = `http://localhost:${port}`;
-                            backendDetected = true;
-                            console.log(`✅ Backend detected on port ${port}`);
-                            return;
+                    if (rootResponse.ok) {
+                        const rootData = await rootResponse.json();
+                        // Check if it's our NLP API (should have "NLP API" in message)
+                        if (rootData.message && rootData.message.includes("NLP API")) {
+                            // Verify health endpoint
+                            const healthResponse = await fetch(`http://localhost:${port}/health`, {
+                                method: 'GET',
+                                mode: 'cors',
+                                signal: controller.signal,
+                                cache: 'no-cache',
+                                headers: {
+                                    'Accept': 'application/json'
+                                }
+                            });
+                            
+                            if (healthResponse.ok) {
+                                const healthData = await healthResponse.json();
+                                if (healthData.status === 'healthy') {
+                                    API_URL = `http://localhost:${port}`;
+                                    backendDetected = true;
+                                    console.log(`✅ NLP Backend detected on port ${port}`);
+                                    return;
+                                }
+                            }
                         }
                     }
                 } catch (e) {
@@ -397,7 +415,7 @@
                 }
             }
             
-            console.warn('⚠️ Backend not detected on any port. Make sure the backend server is running.');
+            console.warn('⚠️ NLP Backend not detected on any port. Make sure the backend server is running.');
             console.warn('Start backend with: cd backend && python3 start_server.py');
         }
         
