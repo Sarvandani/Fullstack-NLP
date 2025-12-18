@@ -30,7 +30,12 @@ A comprehensive full-stack application for Natural Language Processing tasks inc
 - **DistilBERT** - Sentiment Analysis (`distilbert-base-uncased-finetuned-sst-2-english`)
 - **spaCy Small** - Named Entity Recognition (`en_core_web_sm`)
 - **DistilBART** - Text Summarization (`sshleifer/distilbart-cnn-12-6`)
-- **Zero-Shot Classification** - Text Classification (`typeform/distilbert-base-uncased-mnli`)
+- **DeBERTa-v3** - Text Classification (Primary) (`MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli`)
+  - Best accuracy, trained on MNLI + FEVER + ANLI datasets
+  - Automatic recognition of 30+ categories
+  - Multi-label classification (detects multiple topics)
+- **BART-large** - Text Classification (Fallback) (`facebook/bart-large-mnli`)
+- **DistilBERT-MNLI** - Text Classification (Fallback) (`typeform/distilbert-base-uncased-mnli`)
 
 ### Development Tools
 
