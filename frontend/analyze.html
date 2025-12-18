@@ -637,22 +637,49 @@
                 `;
             }
 
-            // Text Classification
+            // Text Classification - Show multiple categories
             if (data.classification && !data.classification.error) {
-                html += `
-                    <div class="result-card">
-                        <h3>📝 Text Classification</h3>
-                        <div class="result-content">
-                            <div class="stats">
-                                <div class="stat-item">
-                                    <div class="stat-value">${data.classification.category}</div>
-                                    <div class="stat-label">Category</div>
-                                </div>
-                                <div class="stat-item">
-                                    <div class="stat-value">${(data.classification.confidence * 100).toFixed(1)}%</div>
-                                    <div class="stat-label">Confidence</div>
+                let categoriesHtml = '';
+                
+                // Show top categories if available
+                if (data.classification.top_categories && data.classification.top_categories.length > 0) {
+                    categoriesHtml = '<div style="margin-top: 15px;"><strong style="color: #64b5f6;">Detected Topics:</strong><div style="margin-top: 10px;">';
+                    data.classification.top_categories.forEach((cat, index) => {
+                        const confidencePercent = (cat.confidence * 100).toFixed(1);
+                        const isPrimary = index === 0;
+                        categoriesHtml += `
+                            <div style="background: ${isPrimary ? '#0d47a1' : '#1a237e'}; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #2196F3;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <span style="color: #90caf9; font-weight: ${isPrimary ? 'bold' : 'normal'};">${isPrimary ? '🏆 ' : '• '}${cat.category}</span>
+                                    </div>
+                                    <div style="color: #64b5f6; font-weight: bold;">${confidencePercent}%</div>
                                 </div>
                             </div>
+                        `;
+                    });
+                    categoriesHtml += '</div></div>';
+                } else {
+                    // Fallback to single category display
+                    categoriesHtml = `
+                        <div class="stats">
+                            <div class="stat-item">
+                                <div class="stat-value" style="font-size: 1.2em;">${data.classification.category}</div>
+                                <div class="stat-label">Primary Category</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${(data.classification.confidence * 100).toFixed(1)}%</div>
+                                <div class="stat-label">Confidence</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += `
+                    <div class="result-card">
+                        <h3>📝 Text Classification ${data.classification.multi_label ? '<span style="font-size: 0.7em; color: #90caf9;">(Multiple Topics Detected)</span>' : ''}</h3>
+                        <div class="result-content">
+                            ${categoriesHtml}
                         </div>
                     </div>
                 `;

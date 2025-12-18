@@ -183,68 +183,135 @@ class NLPService:
             return {"error": str(e)}
     
     def classify_text(self, text: str) -> Dict[str, Any]:
-        """Classify text into categories using zero-shot classification"""
+        """Classify text into categories using automatic zero-shot classification with comprehensive categories"""
         if not text or len(text.strip()) == 0:
             return {"error": "Empty text provided"}
         
         self._ensure_models_loaded()
         
         try:
-            # Define categories with better descriptions for zero-shot classification
+            # Comprehensive set of categories for automatic recognition
             candidate_labels = [
-                "technology",
-                "business",
-                "science",
-                "health",
-                "sports",
-                "politics",
-                "entertainment",
-                "education",
-                "general"
+                "technology and computing",
+                "artificial intelligence and machine learning",
+                "software development and programming",
+                "business and finance",
+                "economics and markets",
+                "startups and entrepreneurship",
+                "science and research",
+                "medicine and healthcare",
+                "mental health and wellness",
+                "education and learning",
+                "politics and government",
+                "law and legal",
+                "news and current events",
+                "sports and athletics",
+                "entertainment and media",
+                "music and arts",
+                "movies and television",
+                "literature and books",
+                "travel and tourism",
+                "food and cooking",
+                "fashion and style",
+                "environment and climate",
+                "energy and sustainability",
+                "automotive and transportation",
+                "real estate and property",
+                "personal finance and investing",
+                "career and employment",
+                "relationships and social",
+                "philosophy and religion",
+                "history and culture",
+                "gaming and esports",
+                "social media and internet culture",
+                "science fiction and fantasy",
+                "general discussion"
             ]
             
             # Truncate text if too long (zero-shot models have token limits)
-            max_chars = 1000
+            # Use more text for better classification
+            max_chars = 1500
             if len(text) > max_chars:
                 text = text[:max_chars].rsplit(' ', 1)[0] + "..."
             
-            # Use zero-shot classification if available
+            # Use zero-shot classification with multi-label to detect multiple topics
             if self.classification_pipeline:
                 try:
-                    result = self.classification_pipeline(text, candidate_labels, multi_label=False)
+                    # Enable multi-label to detect multiple relevant categories
+                    result = self.classification_pipeline(text, candidate_labels, multi_label=True)
                     
-                    # Get top category and confidence
-                    top_category = result["labels"][0] if result["labels"] else "general"
-                    confidence = result["scores"][0] if result["scores"] else 0.0
-                    
-                    # Create category scores dictionary
+                    # Get all categories with confidence > 0.1 (threshold for relevance)
+                    relevant_categories = []
                     category_scores = {}
+                    
                     for label, score in zip(result["labels"], result["scores"]):
                         category_scores[label] = round(score, 4)
+                        if score > 0.1:  # Only include categories with meaningful confidence
+                            relevant_categories.append({
+                                "category": label,
+                                "confidence": round(score, 4)
+                            })
+                    
+                    # Sort by confidence
+                    relevant_categories.sort(key=lambda x: x["confidence"], reverse=True)
+                    
+                    # Get top 3 categories
+                    top_categories = relevant_categories[:3] if len(relevant_categories) >= 3 else relevant_categories
+                    
+                    # Primary category is the top one
+                    primary_category = top_categories[0]["category"] if top_categories else "general discussion"
+                    primary_confidence = top_categories[0]["confidence"] if top_categories else 0.0
                     
                     # Get sentiment for additional context
                     sentiment_result = self.analyze_sentiment(text)
                     
                     return {
-                        "category": top_category,
-                        "confidence": round(confidence, 4),
-                        "category_scores": category_scores,
-                        "sentiment": sentiment_result.get("sentiment", "neutral")
+                        "category": primary_category,
+                        "confidence": primary_confidence,
+                        "top_categories": top_categories,  # Top 3 categories
+                        "all_category_scores": category_scores,  # All scores for reference
+                        "sentiment": sentiment_result.get("sentiment", "neutral"),
+                        "multi_label": True  # Indicates multiple topics detected
                     }
                 except Exception as e:
                     print(f"Zero-shot classification failed, using fallback: {e}")
-                    # Fall through to keyword-based approach
+                    # Fall through to improved keyword-based approach
             
-            # Fallback: Improved keyword-based classification
+            # Enhanced fallback: Comprehensive keyword-based classification
             categories = {
-                "technology": ["computer", "software", "tech", "digital", "internet", "code", "programming", "app", "device", "system", "network", "algorithm", "data", "server", "cloud", "ai", "artificial intelligence", "machine learning"],
-                "business": ["company", "business", "market", "sales", "revenue", "profit", "corporate", "enterprise", "finance", "investment", "stock", "trade", "commerce", "customer", "client"],
-                "science": ["research", "study", "scientific", "experiment", "hypothesis", "theory", "discovery", "laboratory", "scientist", "physics", "chemistry", "biology", "mathematics"],
-                "health": ["health", "medical", "doctor", "patient", "treatment", "disease", "medicine", "hospital", "clinic", "symptom", "diagnosis", "therapy", "wellness"],
-                "sports": ["game", "player", "team", "sport", "match", "championship", "athlete", "coach", "tournament", "competition", "football", "basketball", "soccer"],
-                "politics": ["government", "political", "election", "policy", "law", "president", "minister", "parliament", "democracy", "vote", "campaign", "party"],
-                "entertainment": ["movie", "film", "music", "show", "actor", "singer", "celebrity", "entertainment", "theater", "concert", "performance"],
-                "education": ["school", "university", "student", "teacher", "education", "learn", "study", "course", "degree", "academic"]
+                "technology and computing": ["computer", "software", "tech", "digital", "internet", "code", "programming", "app", "device", "system", "network", "algorithm", "data", "server", "cloud", "hardware", "software", "platform", "application", "database", "cybersecurity"],
+                "artificial intelligence and machine learning": ["ai", "artificial intelligence", "machine learning", "deep learning", "neural network", "algorithm", "model", "training", "dataset", "nlp", "natural language", "computer vision", "robotics", "automation"],
+                "software development and programming": ["code", "programming", "developer", "coding", "software", "application", "api", "framework", "library", "debug", "git", "repository", "deployment", "backend", "frontend"],
+                "business and finance": ["company", "business", "market", "sales", "revenue", "profit", "corporate", "enterprise", "finance", "investment", "stock", "trade", "commerce", "customer", "client", "revenue", "growth", "strategy"],
+                "economics and markets": ["economy", "economic", "market", "trading", "stock", "currency", "inflation", "gdp", "unemployment", "financial", "banking", "investment", "portfolio"],
+                "startups and entrepreneurship": ["startup", "entrepreneur", "founder", "venture", "funding", "investor", "pitch", "business plan", "innovation", "disrupt"],
+                "science and research": ["research", "study", "scientific", "experiment", "hypothesis", "theory", "discovery", "laboratory", "scientist", "physics", "chemistry", "biology", "mathematics", "astronomy", "geology"],
+                "medicine and healthcare": ["health", "medical", "doctor", "patient", "treatment", "disease", "medicine", "hospital", "clinic", "symptom", "diagnosis", "therapy", "surgery", "medication", "clinical"],
+                "mental health and wellness": ["mental health", "wellness", "therapy", "counseling", "anxiety", "depression", "stress", "mindfulness", "meditation", "psychology", "psychiatrist"],
+                "education and learning": ["school", "university", "student", "teacher", "education", "learn", "study", "course", "degree", "academic", "curriculum", "teaching", "learning"],
+                "politics and government": ["government", "political", "election", "policy", "law", "president", "minister", "parliament", "democracy", "vote", "campaign", "party", "senate", "congress"],
+                "law and legal": ["law", "legal", "attorney", "lawyer", "court", "judge", "lawsuit", "legal case", "jurisdiction", "legislation", "constitution"],
+                "news and current events": ["news", "breaking", "report", "journalism", "article", "headline", "current events", "latest", "update"],
+                "sports and athletics": ["game", "player", "team", "sport", "match", "championship", "athlete", "coach", "tournament", "competition", "football", "basketball", "soccer", "baseball", "tennis"],
+                "entertainment and media": ["entertainment", "media", "celebrity", "show", "television", "tv", "broadcast", "journalism"],
+                "music and arts": ["music", "song", "artist", "album", "concert", "performance", "art", "painting", "sculpture", "gallery", "exhibition"],
+                "movies and television": ["movie", "film", "cinema", "actor", "director", "series", "episode", "netflix", "hollywood"],
+                "literature and books": ["book", "novel", "author", "writing", "literature", "poetry", "publisher", "reading"],
+                "travel and tourism": ["travel", "trip", "vacation", "tourist", "destination", "hotel", "flight", "journey", "explore"],
+                "food and cooking": ["food", "cooking", "recipe", "restaurant", "cuisine", "chef", "meal", "dining", "kitchen"],
+                "fashion and style": ["fashion", "style", "clothing", "designer", "outfit", "trend", "wardrobe"],
+                "environment and climate": ["environment", "climate", "global warming", "pollution", "sustainability", "green", "renewable", "carbon", "emissions"],
+                "energy and sustainability": ["energy", "solar", "wind", "renewable", "sustainability", "green energy", "power", "electricity"],
+                "automotive and transportation": ["car", "vehicle", "automotive", "driving", "transportation", "highway", "traffic"],
+                "real estate and property": ["real estate", "property", "house", "home", "apartment", "mortgage", "rent", "buying"],
+                "personal finance and investing": ["investment", "savings", "retirement", "portfolio", "stocks", "bonds", "financial planning"],
+                "career and employment": ["career", "job", "employment", "work", "profession", "resume", "interview", "salary"],
+                "relationships and social": ["relationship", "friendship", "social", "dating", "marriage", "family", "community"],
+                "philosophy and religion": ["philosophy", "religion", "spiritual", "belief", "faith", "theology", "ethics", "moral"],
+                "history and culture": ["history", "historical", "culture", "tradition", "heritage", "ancient", "civilization"],
+                "gaming and esports": ["game", "gaming", "video game", "esports", "gamer", "console", "pc gaming"],
+                "social media and internet culture": ["social media", "facebook", "twitter", "instagram", "tiktok", "viral", "meme", "online"],
+                "science fiction and fantasy": ["sci-fi", "science fiction", "fantasy", "futuristic", "space", "alien", "dystopian"]
             }
             
             text_lower = text.lower()
@@ -261,13 +328,30 @@ class NLPService:
                     score += matches
                 scores[category] = score
             
-            # Get top category
-            top_category = max(scores, key=scores.get) if max(scores.values()) > 0 else "general"
-            max_score = scores[top_category] if top_category in scores else 0
+            # Get top 3 categories
+            sorted_categories = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+            top_3 = sorted_categories[:3]
+            
+            # Primary category
+            top_category = top_3[0][0] if top_3 and top_3[0][1] > 0 else "general discussion"
+            max_score = top_3[0][1] if top_3 else 0
             
             # Calculate confidence based on score ratio
             total_score = sum(scores.values())
             confidence = round(max_score / total_score, 4) if total_score > 0 else 0.0
+            
+            # Get top 3 categories with confidence scores
+            top_categories = []
+            for cat, score in top_3:
+                if score > 0:
+                    cat_confidence = round(score / total_score, 4) if total_score > 0 else 0.0
+                    top_categories.append({
+                        "category": cat,
+                        "confidence": cat_confidence
+                    })
+            
+            # Normalize all scores
+            normalized_scores = {k: round(v / total_score, 4) if total_score > 0 else 0 for k, v in scores.items()}
             
             # Also get sentiment for additional context
             sentiment_result = self.analyze_sentiment(text)
@@ -275,8 +359,10 @@ class NLPService:
             return {
                 "category": top_category,
                 "confidence": confidence,
-                "category_scores": {k: round(v / total_score, 4) if total_score > 0 else 0 for k, v in scores.items()},
-                "sentiment": sentiment_result.get("sentiment", "neutral")
+                "top_categories": top_categories,  # Top 3 categories
+                "all_category_scores": normalized_scores,  # All scores for reference
+                "sentiment": sentiment_result.get("sentiment", "neutral"),
+                "multi_label": len(top_categories) > 1  # Indicates multiple topics detected
             }
         except Exception as e:
             return {"error": str(e)}
