@@ -6,13 +6,15 @@ Handles model loading and port detection
 
 import sys
 import os
+
+# Set environment variables FIRST before importing anything else
+# This prevents threading conflicts and mutex lock errors
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+
 import socket
 import uvicorn
-
-# Set environment variables to prevent threading conflicts
-os.environ["TOKENIZERS_PARALLELISM"] = "false"  # Disable tokenizer parallelism
-os.environ["OMP_NUM_THREADS"] = "1"  # Limit OpenMP threads
-os.environ["MKL_NUM_THREADS"] = "1"  # Limit MKL threads
 
 # Add current directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
