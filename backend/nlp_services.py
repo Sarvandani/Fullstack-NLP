@@ -265,14 +265,16 @@ class NLPService:
             # Use zero-shot classification with multi-label to detect multiple topics
             if self.classification_pipeline:
                 try:
+                    print(f"[DEBUG] Using zero-shot classification model for text classification")
                     # Enable multi-label to detect multiple relevant categories
-                    # DeBERTa-v3 is much better at understanding context and relationships
                     result = self.classification_pipeline(
                         text, 
                         candidate_labels, 
                         multi_label=True,
                         hypothesis_template="This text is about {}."  # Better template for classification
                     )
+                    
+                    print(f"[DEBUG] Zero-shot classification result: {len(result['labels'])} labels, top score: {max(result['scores']) if result['scores'] else 0:.4f}")
                     
                     # Get all categories with confidence > 0.1 (reasonable threshold)
                     # Only include categories that are meaningfully relevant
@@ -284,8 +286,8 @@ class NLPService:
                     
                     for label, score in zip(result["labels"], result["scores"]):
                         category_scores[label] = round(score, 4)
-                        # Use relative threshold: at least 30% of the top score, or absolute 0.1
-                        threshold = max(0.1, max_score * 0.3)
+                        # Use relative threshold: at least 25% of the top score, or absolute 0.08
+                        threshold = max(0.08, max_score * 0.25)
                         if score > threshold:
                             relevant_categories.append({
                                 "category": label,
@@ -302,6 +304,8 @@ class NLPService:
                     primary_category = top_categories[0]["category"] if top_categories else "general discussion"
                     primary_confidence = top_categories[0]["confidence"] if top_categories else 0.0
                     
+                    print(f"[DEBUG] Selected category: {primary_category} (confidence: {primary_confidence:.4f})")
+                    
                     # Get sentiment for additional context
                     sentiment_result = self.analyze_sentiment(text)
                     
@@ -311,13 +315,19 @@ class NLPService:
                         "top_categories": top_categories,  # Top 3-5 categories
                         "all_category_scores": category_scores,  # All scores for reference
                         "sentiment": sentiment_result.get("sentiment", "neutral"),
-                        "multi_label": len(top_categories) > 1  # Indicates multiple topics detected
+                        "multi_label": len(top_categories) > 1,  # Indicates multiple topics detected
+                        "method": "zero-shot-model"  # Indicate which method was used
                     }
                 except Exception as e:
-                    print(f"Zero-shot classification failed: {e}")
+                    print(f"❌ Zero-shot classification failed: {e}")
                     import traceback
                     traceback.print_exc()
                     # Fall through to improved keyword-based approach
+            else:
+                print("[DEBUG] No classification model loaded, using keyword-based fallback")
+            
+            # Enhanced fallback: Comprehensive keyword-based classification
+            print("[DEBUG] Using keyword-based classification fallback")
             
             # Enhanced fallback: Comprehensive keyword-based classification
             # Removed overly common words that appear in many contexts
@@ -375,8 +385,12 @@ class NLPService:
                     score += matches
                 
                 # Require at least 2 different keywords to be considered (reduces false positives)
-                if len(matched_keywords) < 2:
-                    score = score * 0.3  # Penalize single keyword matches
+                # Technology categories need even more keywords (3+) to avoid false positives
+                if "technology" in category.lower() or "software" in category.lower() or "programming" in category.lower():
+                    if len(matched_keywords) < 3:
+                        score = score * 0.1  # Heavy penalty for technology with few keywords
+                elif len(matched_keywords) < 2:
+                    score = score * 0.3  # Penalize single keyword matches for other categories
                 
                 scores[category] = score
             
@@ -414,13 +428,16 @@ class NLPService:
             # Also get sentiment for additional context
             sentiment_result = self.analyze_sentiment(text)
             
+            print(f"[DEBUG] Keyword-based classification result: {top_category} (confidence: {confidence:.4f})")
+            
             return {
                 "category": top_category,
                 "confidence": confidence,
                 "top_categories": top_categories,  # Top 3 categories
                 "all_category_scores": normalized_scores,  # All scores for reference
                 "sentiment": sentiment_result.get("sentiment", "neutral"),
-                "multi_label": len(top_categories) > 1  # Indicates multiple topics detected
+                "multi_label": len(top_categories) > 1,  # Indicates multiple topics detected
+                "method": "keyword-based"  # Indicate which method was used
             }
         except Exception as e:
             return {"error": str(e)}
