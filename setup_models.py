@@ -51,17 +51,39 @@ def download_models():
     except Exception as e:
         print(f"❌ Error downloading spaCy model: {e}")
     
-    # 3. Classification Model
-    print("\n[3/4] Downloading Text Classification Model...")
-    print("Model: distilbert-base-uncased")
-    try:
-        tokenizer = AutoTokenizer.from_pretrained(
-            "distilbert-base-uncased",
-            cache_dir=models_dir
-        )
-        print("✅ Classification model downloaded successfully!")
-    except Exception as e:
-        print(f"❌ Error downloading classification model: {e}")
+    # 3. Classification Model (Zero-shot) - Try multiple options
+    print("\n[3/4] Downloading Text Classification Model (Zero-shot)...")
+    print("Trying models in order: BART-large (fastest) -> DistilBERT (lightweight) -> DeBERTa-v3 (best accuracy)")
+    
+    models_to_try = [
+        ("typeform/distilbert-base-uncased-mnli", "DistilBERT (~250MB, fastest, good accuracy)"),
+        ("MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli", "DeBERTa-v3 (~500MB, best accuracy)"),
+        ("facebook/bart-large-mnli", "BART-large (~1.6GB, very good accuracy)")
+    ]
+    
+    downloaded = False
+    for model_name, description in models_to_try:
+        try:
+            print(f"\n  Trying: {model_name}")
+            print(f"  {description}")
+            from transformers import pipeline
+            # Pre-download the zero-shot classification model
+            classification_pipeline = pipeline(
+                "zero-shot-classification",
+                model=model_name,
+                cache_dir=models_dir,
+                device=-1  # CPU
+            )
+            print(f"  ✅ {model_name} downloaded successfully!")
+            downloaded = True
+            break  # Success, stop trying other models
+        except Exception as e:
+            print(f"  ⚠️  Error downloading {model_name}: {e}")
+            continue
+    
+    if not downloaded:
+        print("  ❌ All classification models failed to download")
+        print("  Will use keyword-based classification as fallback")
     
     # 4. Summarization Model
     print("\n[4/4] Downloading Summarization Model...")
@@ -83,6 +105,8 @@ def download_models():
     print("✅ All models downloaded! You can now start the application.")
     print("=" * 60)
     print(f"\nModels are cached in: {models_dir}")
+    print("\n💡 Tip: Models are cached locally, so they won't download again on next startup.")
+    print("   The first request may still take a moment to load models into memory.")
 
 if __name__ == "__main__":
     download_models()

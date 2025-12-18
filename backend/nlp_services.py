@@ -61,34 +61,49 @@ class NLPService:
     
     def _load_classification_model(self):
         """Load high-performance zero-shot classification model"""
-        # Using DeBERTa-v3-base-mnli - much better accuracy than DistilBERT
-        # Trained on multiple NLI datasets (MNLI, FEVER, ANLI) for superior zero-shot performance
-        # Free and open-source model with excellent classification accuracy
-        try:
-            print("Loading high-performance zero-shot classification model (DeBERTa-v3)...")
-            self.classification_pipeline = pipeline(
-                "zero-shot-classification",
-                model="MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli",
-                cache_dir=self.models_dir,
-                device=-1  # CPU
-            )
-            print("✅ High-performance classification model loaded successfully!")
-        except Exception as e:
-            print(f"⚠️ Error loading DeBERTa-v3 model: {e}")
-            print("Falling back to DistilBERT model...")
+        # Try multiple models in order: lightweight first, then better accuracy
+        # All are free and open-source
+        models_to_try = [
+            {
+                "name": "typeform/distilbert-base-uncased-mnli",
+                "description": "DistilBERT (fastest, lightweight ~250MB, good accuracy)",
+                "priority": 1
+            },
+            {
+                "name": "facebook/bart-large-mnli",
+                "description": "BART-large (better accuracy ~1.6GB, slower)",
+                "priority": 2
+            },
+            {
+                "name": "MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli",
+                "description": "DeBERTa-v3 (best accuracy ~500MB, medium speed)",
+                "priority": 3
+            }
+        ]
+        
+        # Sort by priority (try lightweight first for faster startup)
+        models_to_try.sort(key=lambda x: x["priority"])
+        
+        for model_info in models_to_try:
             try:
-                # Fallback to DistilBERT if DeBERTa fails
+                print(f"Loading zero-shot classification model: {model_info['name']}")
+                print(f"  ({model_info['description']})")
                 self.classification_pipeline = pipeline(
                     "zero-shot-classification",
-                    model="typeform/distilbert-base-uncased-mnli",
+                    model=model_info["name"],
                     cache_dir=self.models_dir,
                     device=-1  # CPU
                 )
-                print("✅ Fallback model (DistilBERT) loaded successfully")
-            except Exception as e2:
-                print(f"❌ Error loading fallback model: {e2}")
-                print("Will use keyword-based classification")
-                self.classification_pipeline = None
+                print(f"✅ Classification model loaded successfully: {model_info['name']}")
+                return  # Success, exit function
+            except Exception as e:
+                print(f"⚠️  Error loading {model_info['name']}: {e}")
+                continue  # Try next model
+        
+        # If all models failed
+        print("❌ All classification models failed to load")
+        print("Will use keyword-based classification as fallback")
+        self.classification_pipeline = None
     
     def _load_summarization_model(self):
         """Load DistilBART for summarization"""
