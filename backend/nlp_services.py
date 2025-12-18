@@ -1,4 +1,10 @@
 import os
+# Set environment variables FIRST before importing torch/transformers
+# This prevents threading conflicts
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+
 import re
 import threading
 from typing import Dict, List, Any
