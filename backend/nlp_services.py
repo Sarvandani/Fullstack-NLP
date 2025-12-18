@@ -252,6 +252,43 @@ class NLPService:
         
         self._ensure_models_loaded()
         
+        # Pre-filter: Detect simple greetings and casual conversation
+        text_lower = text.lower().strip()
+        greeting_patterns = [
+            r'\b(hi|hello|hey|greetings|good morning|good afternoon|good evening)\b',
+            r'\b(glad|happy|pleased|nice)\s+(to|that)\s+(see|meet|hear)',
+            r'\b(how are you|how do you do|what\'?s up)\b',
+            r'^(thanks?|thank you|thx)',
+            r'^(bye|goodbye|see you|farewell)'
+        ]
+        
+        is_greeting = False
+        for pattern in greeting_patterns:
+            if re.search(pattern, text_lower):
+                is_greeting = True
+                break
+        
+        # If it's a short greeting/casual text, classify it directly
+        if is_greeting or (len(text.split()) <= 10 and len(text) < 100):
+            sentiment_result = self.analyze_sentiment(text)
+            return {
+                "category": "casual conversation and greetings",
+                "confidence": 0.95,
+                "top_categories": [
+                    {
+                        "category": "casual conversation and greetings",
+                        "confidence": 0.95
+                    },
+                    {
+                        "category": "relationships and social",
+                        "confidence": 0.85
+                    }
+                ],
+                "all_category_scores": {"casual conversation and greetings": 0.95},
+                "sentiment": sentiment_result.get("sentiment", "neutral"),
+                "multi_label": False
+            }
+        
         try:
             # Comprehensive set of categories - reordered with general/common categories first
             # This helps catch simple greetings, casual conversation, and common text first
