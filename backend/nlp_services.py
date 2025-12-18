@@ -253,9 +253,14 @@ class NLPService:
         self._ensure_models_loaded()
         
         try:
-            # Comprehensive set of categories - reordered to avoid bias
-            # Put more specific categories first, general ones last
+            # Comprehensive set of categories - reordered with general/common categories first
+            # This helps catch simple greetings, casual conversation, and common text first
             candidate_labels = [
+                "casual conversation and greetings",
+                "general discussion",
+                "relationships and social",
+                "personal communication",
+                "everyday conversation",
                 "sports and athletics",
                 "food and cooking",
                 "travel and tourism",
@@ -264,6 +269,8 @@ class NLPService:
                 "literature and books",
                 "fashion and style",
                 "gaming and esports",
+                "entertainment and media",
+                "news and current events",
                 "medicine and healthcare",
                 "mental health and wellness",
                 "education and learning",
@@ -274,9 +281,6 @@ class NLPService:
                 "economics and markets",
                 "personal finance and investing",
                 "career and employment",
-                "entertainment and media",
-                "news and current events",
-                "relationships and social",
                 "philosophy and religion",
                 "history and culture",
                 "environment and climate",
@@ -288,8 +292,7 @@ class NLPService:
                 "software development and programming",
                 "technology and computing",
                 "social media and internet culture",
-                "science fiction and fantasy",
-                "general discussion"
+                "science fiction and fantasy"
             ]
             
             # Use more text for better classification (DeBERTa can handle longer texts)
